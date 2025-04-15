@@ -4,6 +4,15 @@ import { storage } from "./storage";
 import crypto from "crypto";
 import session from "express-session";
 import MemoryStore from "memorystore";
+
+// Declare session type
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+    username?: string;
+    isAdmin?: boolean;
+  }
+}
 import { 
   adminLoginSchema, 
   resellerLoginSchema, 
@@ -46,7 +55,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Middleware to check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    console.log("Auth check - Session data:", req.session);
     if (req.session.userId) {
+      // Ensure userId, username, and isAdmin are defined for TypeScript
+      req.session.userId = req.session.userId as number;
+      req.session.username = req.session.username as string;
+      req.session.isAdmin = req.session.isAdmin as boolean;
       return next();
     }
     res.status(401).json({ status: "error", message: "Unauthorized" });
@@ -198,8 +212,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   app.get("/api/me", isAuthenticated, async (req, res) => {
     try {
+      // At this point, we know username exists because isAuthenticated middleware passed
+      const username = req.session.username as string;
+
       if (req.session.isAdmin) {
-        const admin = await storage.getAdmin(req.session.username);
+        const admin = await storage.getAdmin(username);
         if (!admin) {
           req.session.destroy(() => {});
           return res.status(404).json({ status: "error", message: "User not found" });
@@ -214,7 +231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         });
       } else {
-        const reseller = await storage.getResellerByUsername(req.session.username);
+        const reseller = await storage.getResellerByUsername(username);
         if (!reseller) {
           req.session.destroy(() => {});
           return res.status(404).json({ status: "error", message: "User not found" });
@@ -415,7 +432,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const validatedData = generateKeySchema.parse(req.body);
       
-      const reseller = await storage.getReseller(req.session.userId);
+      // userId is guaranteed to exist because of isAuthenticated middleware
+      const userId = req.session.userId as number;
+      
+      const reseller = await storage.getReseller(userId);
       if (!reseller) {
         return res.status(404).json({ status: "error", message: "Reseller not found" });
       }
@@ -476,7 +496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ status: "error", message: "Admin cannot access reseller keys" });
       }
       
-      const keys = await storage.getKeysByResellerId(req.session.userId);
+      const userId = req.session.userId as number;
+      const keys = await storage.getKeysByResellerId(userId);
       
       // Check for expired keys and update their status
       const now = new Date();
@@ -523,7 +544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Ensure reseller owns the key
-      if (key.resellerId !== req.session.userId) {
+      const userId = req.session.userId as number;
+      if (key.resellerId !== userId) {
         return res.status(403).json({ status: "error", message: "You don't own this key" });
       }
       
@@ -549,7 +571,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ status: "error", message: "Admin cannot access reseller stats" });
       }
       
-      const reseller = await storage.getReseller(req.session.userId);
+      const userId = req.session.userId as number;
+      
+      const reseller = await storage.getReseller(userId);
       if (!reseller) {
         return res.status(404).json({ status: "error", message: "Reseller not found" });
       }
