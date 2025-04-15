@@ -97,7 +97,7 @@ export default function AdminLogin() {
             />
           </div>
 
-          <div className="flex items-center justify-between mt-6">
+          <div className="flex items-center mt-6">
             <FormField
               control={form.control}
               name="rememberMe"
@@ -120,14 +120,6 @@ export default function AdminLogin() {
                 </FormItem>
               )}
             />
-
-            <div className="text-sm">
-              <Link href="#">
-                <span className="font-medium text-primary hover:text-primary/80">
-                  Forgot password?
-                </span>
-              </Link>
-            </div>
           </div>
 
           <div className="mt-6">
