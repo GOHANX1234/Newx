@@ -78,48 +78,65 @@ export function AddCreditsModal({ isOpen, onClose, reseller }: AddCreditsModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-gray-900 border border-gray-800 text-gray-100 shadow-xl">
         <DialogHeader>
-          <DialogTitle>Add Credits to {reseller.username}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-gray-100 font-semibold">
+            Add Credits to {reseller.username}
+          </DialogTitle>
+          <DialogDescription className="text-gray-400">
             Add credits to the reseller's account. Each credit can be used to generate one key.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="p-4 bg-gray-800/50 rounded-md border border-gray-700 mb-4">
+              <div className="text-sm text-gray-300 mb-2">Current Credits</div>
+              <div className="text-2xl font-bold text-primary">{reseller.credits}</div>
+            </div>
             <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Credit Amount</FormLabel>
+                  <FormLabel className="text-gray-200">Credit Amount to Add</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       placeholder="Enter credit amount"
                       min={1}
+                      className="bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
-            <DialogFooter>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 mt-4">
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                className="mt-3"
+                className="w-full sm:w-auto border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-gray-100"
               >
                 Cancel
               </Button>
               <Button 
                 type="submit" 
                 disabled={addCreditsMutation.isPending}
-                className="ml-3"
+                className="w-full sm:w-auto ml-0 sm:ml-3 bg-primary hover:bg-primary/90"
               >
-                {addCreditsMutation.isPending ? "Adding..." : "Add Credits"}
+                {addCreditsMutation.isPending ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Adding...
+                  </div>
+                ) : (
+                  "Add Credits"
+                )}
               </Button>
             </DialogFooter>
           </form>
