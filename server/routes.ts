@@ -622,6 +622,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ status: "error", message: "Invalid key" });
       }
       
+      // Track API usage for the reseller who owns this key
+      await storage.trackApiUsage(key.resellerId, key.key);
+      
       // Check if key is expired
       if (new Date(key.expiryDate) < new Date()) {
         return res.status(400).json({ status: "error", message: "Key has expired" });
@@ -680,6 +683,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
         });
       }
+      
+      // Check if key is expired
+      const isExpired = new Date(key.expiryDate) < new Date();
+      
+      res.status(200).json({
+        status: "success",
+        data: {
+          isValid: !isExpired && key.devicesUsed < key.deviceLimit,
+          game: key.game,
+          deviceLimit: key.deviceLimit,
+          devicesUsed: key.devicesUsed,
+          expiryDate: key.expiryDate,
+          status: isExpired ? "expired" : (key.devicesUsed >= key.deviceLimit ? "full" : "active")
+        },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ status: "error", message: error.message });
+      } else {
+        res.status(500).json({ status: "error", message: "Internal server error" });
+      }
+    }
+  });
+
+  // API usage statistics for reseller
+  app.get("/api/reseller/stats", isAuthenticated, async (req, res) => {
+    try {
+      if (req.session.isAdmin) {
+        return res.status(403).json({ status: "error", message: "Admin cannot access reseller stats" });
+      }
+      
+      const userId = req.session.userId as number;
+      const stats = await storage.getApiUsageStats(userId);
+      
+      res.status(200).json({
+        status: "success",
+        stats
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ status: "error", message: error.message });
+      } else {
+        res.status(500).json({ status: "error", message: "Internal server error" });
+      }
+    }
+  });
+
+  // Also add API usage tracking to the key-status endpoint
+  app.get("/api/key-status/:key", async (req, res) => {
+    try {
+      const keyValue = req.params.key;
+      
+      const key = await storage.getKeyByValue(keyValue);
+      if (!key) {
+        return res.status(200).json({
+          status: "success",
+          data: {
+            isValid: false,
+            message: "Invalid key",
+          },
+        });
+      }
+      
+      // Track API usage
+      await storage.trackApiUsage(key.resellerId, key.key);
       
       // Check if key is expired
       const isExpired = new Date(key.expiryDate) < new Date();

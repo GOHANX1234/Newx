@@ -111,7 +111,7 @@ export class MemStorage implements IStorage {
         const defaultAdmin: Admin = {
           id: this.adminId++,
           username: "admin",
-          password: this.hashPassword("admin123")
+          password: this.hashPassword("0000@#£_")
         };
         this.admins.set(defaultAdmin.username, defaultAdmin);
         await writeFile(ADMINS_FILE, JSON.stringify([defaultAdmin], null, 2));
@@ -246,7 +246,13 @@ export class MemStorage implements IStorage {
       password: this.hashPassword(reseller.password),
       credits: 0,
       keysGenerated: 0,
-      createdAt: new Date()
+      createdAt: new Date(),
+      apiUsage: {
+        totalRequests: 0,
+        lastRequest: new Date(),
+        usageByDate: {},
+        usageByKey: {}
+      }
     };
     this.resellers.set(newReseller.id, newReseller);
     
@@ -259,6 +265,78 @@ export class MemStorage implements IStorage {
     await writeFile(resellerKeysFile, JSON.stringify([], null, 2));
     
     return newReseller;
+  }
+  
+  // Track API usage for a reseller
+  async trackApiUsage(resellerId: number, keyValue: string): Promise<void> {
+    const reseller = this.resellers.get(resellerId);
+    if (!reseller || !reseller.apiUsage) return;
+    
+    // Initialize API usage if it doesn't exist
+    if (!reseller.apiUsage) {
+      reseller.apiUsage = {
+        totalRequests: 0,
+        lastRequest: new Date(),
+        usageByDate: {},
+        usageByKey: {}
+      };
+    }
+    
+    // Update total requests
+    reseller.apiUsage.totalRequests += 1;
+    reseller.apiUsage.lastRequest = new Date();
+    
+    // Update usage by date
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    if (!reseller.apiUsage.usageByDate[today]) {
+      reseller.apiUsage.usageByDate[today] = 0;
+    }
+    reseller.apiUsage.usageByDate[today] += 1;
+    
+    // Update usage by key
+    if (!reseller.apiUsage.usageByKey[keyValue]) {
+      reseller.apiUsage.usageByKey[keyValue] = 0;
+    }
+    reseller.apiUsage.usageByKey[keyValue] += 1;
+    
+    // Save changes
+    this.resellers.set(resellerId, reseller);
+    
+    // Update resellers.json
+    const resellers = Array.from(this.resellers.values());
+    await writeFile(RESELLERS_FILE, JSON.stringify(resellers, null, 2));
+  }
+  
+  // Get API usage stats for a reseller
+  async getApiUsageStats(resellerId: number): Promise<any> {
+    const reseller = this.resellers.get(resellerId);
+    if (!reseller || !reseller.apiUsage) {
+      return {
+        totalRequests: 0,
+        lastRequest: null,
+        dailyStats: [],
+        keyStats: []
+      };
+    }
+    
+    // Format daily stats for chart
+    const dailyStats = Object.entries(reseller.apiUsage.usageByDate).map(([date, count]) => ({
+      date,
+      requests: count
+    })).sort((a, b) => a.date.localeCompare(b.date));
+    
+    // Format key stats
+    const keyStats = Object.entries(reseller.apiUsage.usageByKey).map(([key, count]) => ({
+      key,
+      requests: count
+    })).sort((a, b) => b.requests - a.requests);
+    
+    return {
+      totalRequests: reseller.apiUsage.totalRequests,
+      lastRequest: reseller.apiUsage.lastRequest,
+      dailyStats,
+      keyStats
+    };
   }
   
   async getReseller(id: number): Promise<Reseller | undefined> {

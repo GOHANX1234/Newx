@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "id": 1,
+    "username": "Gohan",
+    "email": "mohansuchil4@gmail.com",
+    "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "credits": 0,
+    "keysGenerated": 1,
+    "createdAt": "2025-04-15T08:24:36.802Z"
+  }
+]

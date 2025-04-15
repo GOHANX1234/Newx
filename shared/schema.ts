@@ -85,7 +85,14 @@ export type InsertReferralToken = z.infer<typeof insertReferralTokenSchema>;
 export type ReferralToken = typeof referralTokens.$inferSelect;
 
 export type InsertReseller = z.infer<typeof insertResellerSchema>;
-export type Reseller = typeof resellers.$inferSelect;
+export type Reseller = typeof resellers.$inferSelect & {
+  apiUsage?: {
+    totalRequests: number;
+    lastRequest: Date;
+    usageByDate: Record<string, number>;
+    usageByKey: Record<string, number>;
+  };
+};
 
 export type InsertKey = z.infer<typeof insertKeySchema>;
 export type Key = typeof keys.$inferSelect;
