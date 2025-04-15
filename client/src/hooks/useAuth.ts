@@ -19,50 +19,85 @@ export function useAuth() {
     data: userData,
     isLoading,
     isError,
+    error: userError,
   } = useQuery<{ user: User } | null>({
     queryKey: ['/api/me'],
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: true,
     retry: false,
     queryFn: async ({ queryKey }) => {
-      const res = await fetch(queryKey[0] as string, {
-        credentials: "include",
-      });
-      
-      if (res.status === 401) {
-        return null;
+      try {
+        console.log('Fetching current user data...');
+        const res = await fetch(queryKey[0] as string, {
+          credentials: "include",
+        });
+        
+        if (res.status === 401) {
+          console.log('Not authenticated (401)');
+          return null;
+        }
+        
+        if (!res.ok) {
+          console.error(`API error: ${res.status} ${res.statusText}`);
+          throw new Error(`${res.status}: ${res.statusText}`);
+        }
+        
+        const data = await res.json();
+        console.log('User data fetched:', data);
+        return data;
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        throw error;
       }
-      
-      if (!res.ok) {
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      
-      return await res.json();
     },
   });
 
   // Admin login mutation
   const adminLoginMutation = useMutation({
     mutationFn: async (data: { username: string; password: string }) => {
-      const res = await apiRequest('POST', '/api/admin/login', data);
-      return res.json();
+      try {
+        console.log('Attempting admin login:', data.username);
+        const res = await apiRequest('POST', '/api/admin/login', data);
+        const responseData = await res.json();
+        console.log('Admin login response:', responseData);
+        return responseData;
+      } catch (error) {
+        console.error('Admin login error:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Admin login successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['/api/me'] });
       setLocation('/');
     },
+    onError: (error) => {
+      console.error('Admin login mutation error:', error);
+    }
   });
 
   // Reseller login mutation
   const resellerLoginMutation = useMutation({
     mutationFn: async (data: { username: string; password: string }) => {
-      const res = await apiRequest('POST', '/api/reseller/login', data);
-      return res.json();
+      try {
+        console.log('Attempting reseller login:', data.username);
+        const res = await apiRequest('POST', '/api/reseller/login', data);
+        const responseData = await res.json();
+        console.log('Reseller login response:', responseData);
+        return responseData;
+      } catch (error) {
+        console.error('Reseller login error:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Reseller login successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: ['/api/me'] });
       setLocation('/');
     },
+    onError: (error) => {
+      console.error('Reseller login mutation error:', error);
+    }
   });
 
   // Reseller registration mutation
@@ -97,6 +132,7 @@ export function useAuth() {
     user: userData?.user || null,
     isLoading,
     isError,
+    userError,
     adminLogin: (data: { username: string; password: string }) => adminLoginMutation.mutate(data),
     resellerLogin: (data: { username: string; password: string }) => resellerLoginMutation.mutate(data),
     resellerRegister: (data: { 
