@@ -48,6 +48,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       secret: process.env.SESSION_SECRET || "key-management-system-secret",
       resave: false,
       saveUninitialized: false,
+<<<<<<< HEAD
+=======
+      cookie: { 
+        secure: false, // Disable secure cookie for development
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+        httpOnly: true
+      },
+>>>>>>> f9633f9 (Assistant checkpoint: Update session configuration for development environment)
       store: new SessionStore({
         checkPeriod: 86400000 // 24 hours
       }),
