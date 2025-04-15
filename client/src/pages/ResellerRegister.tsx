@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -46,13 +47,16 @@ export default function ResellerRegister() {
     });
   };
 
-  if (resellerRegisterError) {
-    toast({
-      title: "Registration failed",
-      description: resellerRegisterError instanceof Error ? resellerRegisterError.message : "An error occurred",
-      variant: "destructive",
-    });
-  }
+  // Use useEffect to display the toast for errors to prevent infinite rerenders
+  useEffect(() => {
+    if (resellerRegisterError) {
+      toast({
+        title: "Registration failed",
+        description: resellerRegisterError instanceof Error ? resellerRegisterError.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [resellerRegisterError, toast]);
 
   return (
     <AuthLayout 

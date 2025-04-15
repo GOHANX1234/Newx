@@ -64,9 +64,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/login", async (req, res) => {
     try {
       const validatedData = adminLoginSchema.parse(req.body);
+      console.log(`Login attempt for admin: ${validatedData.username}`);
       
       const admin = await storage.getAdmin(validatedData.username);
       if (!admin) {
+        console.log(`Admin not found: ${validatedData.username}`);
         return res.status(401).json({ status: "error", message: "Invalid credentials" });
       }
       
@@ -74,6 +76,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .createHash("sha256")
         .update(validatedData.password)
         .digest("hex");
+      
+      console.log(`Password check: ${admin.password === hashedPassword ? 'match' : 'mismatch'}`);
       
       if (admin.password !== hashedPassword) {
         return res.status(401).json({ status: "error", message: "Invalid credentials" });

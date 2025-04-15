@@ -34,6 +34,7 @@ export default function AdminLogin() {
   });
 
   const onSubmit = (data: FormValues) => {
+    console.log("Attempting admin login with:", data.username);
     adminLogin({
       username: data.username,
       password: data.password,

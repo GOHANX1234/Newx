@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -39,13 +40,16 @@ export default function ResellerLogin() {
     });
   };
 
-  if (resellerLoginError) {
-    toast({
-      title: "Login failed",
-      description: resellerLoginError instanceof Error ? resellerLoginError.message : "An error occurred",
-      variant: "destructive",
-    });
-  }
+  // Use useEffect to display the toast for errors to prevent infinite rerenders
+  useEffect(() => {
+    if (resellerLoginError) {
+      toast({
+        title: "Login failed",
+        description: resellerLoginError instanceof Error ? resellerLoginError.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [resellerLoginError, toast]);
 
   return (
     <AuthLayout 
