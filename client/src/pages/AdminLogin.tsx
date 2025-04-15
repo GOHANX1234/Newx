@@ -54,8 +54,8 @@ export default function AdminLogin() {
 
   return (
     <AuthLayout 
-      title="Key Management System" 
-      subtitle="Sign in to access your account"
+      title="AsterialHack" 
+      subtitle="Admin Portal | Game Authentication System"
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 space-y-6">
@@ -65,15 +65,15 @@ export default function AdminLogin() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="sr-only">Username</FormLabel>
+                  <FormLabel className="text-sm font-medium text-gray-200">Username</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Username"
-                      className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                      placeholder="Enter your username"
+                      className="bg-gray-900 border-gray-700 text-white placeholder-gray-400 rounded-t-md focus:ring-primary focus:border-primary"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
@@ -81,23 +81,23 @@ export default function AdminLogin() {
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="sr-only">Password</FormLabel>
+                <FormItem className="mt-4">
+                  <FormLabel className="text-sm font-medium text-gray-200">Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
-                      placeholder="Password"
-                      className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                      placeholder="Enter your password"
+                      className="bg-gray-900 border-gray-700 text-white placeholder-gray-400 rounded-b-md focus:ring-primary focus:border-primary"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-400" />
                 </FormItem>
               )}
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-6">
             <FormField
               control={form.control}
               name="rememberMe"
@@ -108,11 +108,12 @@ export default function AdminLogin() {
                       checked={field.value}
                       onCheckedChange={field.onChange}
                       id="remember-me"
+                      className="text-primary border-gray-600"
                     />
                   </FormControl>
                   <Label
                     htmlFor="remember-me"
-                    className="ml-2 block text-sm text-gray-900 cursor-pointer"
+                    className="ml-2 block text-sm text-gray-300 cursor-pointer"
                   >
                     Remember me
                   </Label>
@@ -122,26 +123,36 @@ export default function AdminLogin() {
 
             <div className="text-sm">
               <Link href="#">
-                <span className="font-medium text-primary hover:text-blue-700">
+                <span className="font-medium text-primary hover:text-primary/80">
                   Forgot password?
                 </span>
               </Link>
             </div>
           </div>
 
-          <div>
+          <div className="mt-6">
             <Button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200"
               disabled={isAdminLoginLoading}
             >
-              {isAdminLoginLoading ? "Signing in..." : "Sign in as Admin"}
+              {isAdminLoginLoading ? (
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </div>
+              ) : (
+                <span>Sign in as Admin</span>
+              )}
             </Button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-6 border-t border-gray-700 pt-6">
             <Link href="/reseller/login">
-              <span className="font-medium text-sm text-primary hover:text-blue-700">
+              <span className="font-medium text-sm text-primary hover:text-primary/80 transition-colors">
                 Login as Reseller instead
               </span>
             </Link>
