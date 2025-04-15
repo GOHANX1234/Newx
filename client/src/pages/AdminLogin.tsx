@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthLayout } from "@/components/AuthLayout";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -40,13 +40,16 @@ export default function AdminLogin() {
     });
   };
 
-  if (adminLoginError) {
-    toast({
-      title: "Login failed",
-      description: adminLoginError instanceof Error ? adminLoginError.message : "An error occurred",
-      variant: "destructive",
-    });
-  }
+  // Use useEffect to display the toast for errors to prevent infinite rerenders
+  useEffect(() => {
+    if (adminLoginError) {
+      toast({
+        title: "Login failed",
+        description: adminLoginError instanceof Error ? adminLoginError.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [adminLoginError, toast]);
 
   return (
     <AuthLayout 
