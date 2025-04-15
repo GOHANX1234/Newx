@@ -71,80 +71,98 @@ export function ResellersTable() {
   if (isLoading) {
     return (
       <div className="flex justify-center py-6">
-        <div className="h-8 w-8 rounded-full border-4 border-t-primary border-r-primary border-b-transparent border-l-transparent animate-spin"></div>
+        <svg className="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
       </div>
     );
   }
 
   return (
     <>
-      <div className="rounded-md">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[150px]">Username</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Credits</TableHead>
-              <TableHead>Keys Generated</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {data?.resellers?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6 text-gray-500">
-                  No resellers found
-                </TableCell>
+      <div className="rounded-md border border-gray-800 overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-gray-800">
+              <TableRow className="border-gray-800">
+                <TableHead className="w-[150px] text-gray-300">Username</TableHead>
+                <TableHead className="text-gray-300 hidden md:table-cell">Email</TableHead>
+                <TableHead className="text-gray-300">Credits</TableHead>
+                <TableHead className="text-gray-300 hidden sm:table-cell">Keys</TableHead>
+                <TableHead className="text-right text-gray-300">Actions</TableHead>
               </TableRow>
-            ) : (
-              data?.resellers?.map((reseller) => (
-                <TableRow key={reseller.id}>
-                  <TableCell className="font-medium">{reseller.username}</TableCell>
-                  <TableCell>{reseller.email}</TableCell>
-                  <TableCell>{reseller.credits}</TableCell>
-                  <TableCell>{reseller.keysGenerated}</TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="link"
-                      className="text-primary hover:text-blue-700 mr-3"
-                      onClick={() => handleOpenAddCreditsModal(reseller)}
-                    >
-                      Add Credits
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="link"
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will permanently delete the reseller account and all their keys.
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => handleDeleteReseller(reseller.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+            </TableHeader>
+            <TableBody>
+              {data?.resellers?.length === 0 ? (
+                <TableRow className="border-gray-800">
+                  <TableCell colSpan={5} className="text-center py-6 text-gray-400">
+                    No resellers found
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                data?.resellers?.map((reseller) => (
+                  <TableRow key={reseller.id} className="border-gray-800 hover:bg-gray-800/50">
+                    <TableCell className="font-medium text-gray-300">
+                      <div>
+                        {reseller.username}
+                        <div className="text-xs text-gray-400 md:hidden">{reseller.email}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-300 hidden md:table-cell">{reseller.email}</TableCell>
+                    <TableCell className="text-gray-300">
+                      <span className="font-semibold bg-primary/10 text-primary px-2 py-1 rounded-md">
+                        {reseller.credits}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-300 hidden sm:table-cell">{reseller.keysGenerated}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-col sm:flex-row justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-primary border-primary/30 hover:bg-primary/10"
+                          onClick={() => handleOpenAddCreditsModal(reseller)}
+                        >
+                          Add Credits
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-500 border-red-500/30 hover:bg-red-500/10"
+                            >
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-gray-900 border-gray-800">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="text-gray-100">Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription className="text-gray-400">
+                                This will permanently delete the reseller account and all their keys.
+                                This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700">Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => handleDeleteReseller(reseller.id)}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
       
       {selectedReseller && (
