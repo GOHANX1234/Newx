@@ -13,6 +13,7 @@ declare module "express-session" {
     isAdmin?: boolean;
   }
 }
+
 import { 
   adminLoginSchema, 
   resellerLoginSchema, 
@@ -28,7 +29,7 @@ const generateToken = (length: number = 16) => {
 
 const generateKey = (customKey?: string) => {
   if (customKey) return customKey;
-  
+
   const parts = [];
   for (let i = 0; i < 4; i++) {
     parts.push(crypto.randomBytes(4).toString("hex").toUpperCase());
@@ -38,90 +39,87 @@ const generateKey = (customKey?: string) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
-  // Set up session middleware
+
+  // Set up session middleware with more explicit configuration
   const SessionStore = MemoryStore(session);
   app.use(
     session({
+      name: 'sid',
       secret: process.env.SESSION_SECRET || "key-management-system-secret",
       resave: false,
       saveUninitialized: false,
-      cookie: { 
-        secure: false, // Disable secure cookie for development
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-        httpOnly: true
-      },
       store: new SessionStore({
-        checkPeriod: 86400000, // 24 hours
+        checkPeriod: 86400000 // 24 hours
       }),
+      cookie: {
+        secure: false, // Set to false for HTTP
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax',
+        path: '/'
+      }
     })
   );
-  
+
   // Middleware to check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    console.log("Auth check - Session data:", req.session);
-    if (req.session.userId) {
-      // Ensure userId, username, and isAdmin are defined for TypeScript
-      req.session.userId = req.session.userId as number;
-      req.session.username = req.session.username as string;
-      req.session.isAdmin = req.session.isAdmin as boolean;
+    if (req.session && req.session.userId) {
       return next();
     }
     res.status(401).json({ status: "error", message: "Unauthorized" });
   };
-  
+
   // Middleware to check if user is admin
   const isAdmin = (req: Request, res: Response, next: Function) => {
-    if (req.session.isAdmin) {
+    if (req.session && req.session.isAdmin) {
       return next();
     }
     res.status(403).json({ status: "error", message: "Forbidden" });
   };
-  
+
   // Admin login
   app.post("/api/admin/login", async (req, res) => {
     try {
       const validatedData = adminLoginSchema.parse(req.body);
-      console.log(`Login attempt for admin: ${validatedData.username}`);
-      
+
       const admin = await storage.getAdmin(validatedData.username);
       if (!admin) {
-        console.log(`Admin not found: ${validatedData.username}`);
         return res.status(401).json({ status: "error", message: "Invalid credentials" });
       }
-      
+
       const hashedPassword = crypto
         .createHash("sha256")
         .update(validatedData.password)
         .digest("hex");
-      
-      console.log(`Password check: ${admin.password === hashedPassword ? 'match' : 'mismatch'}`);
-      
+
       if (admin.password !== hashedPassword) {
         return res.status(401).json({ status: "error", message: "Invalid credentials" });
       }
-      
-      // Set session data
+
       req.session.userId = admin.id;
       req.session.username = admin.username;
       req.session.isAdmin = true;
-      
+
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve(true);
+        });
+      });
+
       res.status(200).json({
         status: "success",
         user: {
           id: admin.id,
-          username: admin.username,
-        },
+          username: admin.username
+        }
       });
     } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ status: "error", message: error.message });
-      } else {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-      }
+      console.error('Login error:', error);
+      res.status(400).json({ status: "error", message: error instanceof Error ? error.message : "Invalid request" });
     }
   });
-  
+
   // Reseller login
   app.post("/api/reseller/login", async (req, res) => {
     try {
@@ -146,6 +144,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.username = reseller.username;
       req.session.isAdmin = false;
       
+      await new Promise((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          resolve(true);
+        });
+      });
+
       res.status(200).json({
         status: "success",
         user: {
@@ -207,8 +212,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {
+        console.error('Logout error:', err);
         return res.status(500).json({ status: "error", message: "Failed to logout" });
       }
+      res.clearCookie('sid');
       res.status(200).json({ status: "success", message: "Logged out successfully" });
     });
   });
@@ -218,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // At this point, we know username exists because isAuthenticated middleware passed
       const username = req.session.username as string;
-
+      
       if (req.session.isAdmin) {
         const admin = await storage.getAdmin(username);
         if (!admin) {
@@ -688,68 +695,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Check if key is expired
-      const isExpired = new Date(key.expiryDate) < new Date();
-      
-      res.status(200).json({
-        status: "success",
-        data: {
-          isValid: !isExpired && key.devicesUsed < key.deviceLimit,
-          game: key.game,
-          deviceLimit: key.deviceLimit,
-          devicesUsed: key.devicesUsed,
-          expiryDate: key.expiryDate,
-          status: isExpired ? "expired" : (key.devicesUsed >= key.deviceLimit ? "full" : "active")
-        },
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ status: "error", message: error.message });
-      } else {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-      }
-    }
-  });
-
-  // API usage statistics for reseller
-  app.get("/api/reseller/stats", isAuthenticated, async (req, res) => {
-    try {
-      if (req.session.isAdmin) {
-        return res.status(403).json({ status: "error", message: "Admin cannot access reseller stats" });
-      }
-      
-      const userId = req.session.userId as number;
-      const stats = await storage.getApiUsageStats(userId);
-      
-      res.status(200).json({
-        status: "success",
-        stats
-      });
-    } catch (error) {
-      if (error instanceof Error) {
-        res.status(400).json({ status: "error", message: error.message });
-      } else {
-        res.status(500).json({ status: "error", message: "Internal server error" });
-      }
-    }
-  });
-
-  // Also add API usage tracking to the key-status endpoint
-  app.get("/api/key-status/:key", async (req, res) => {
-    try {
-      const keyValue = req.params.key;
-      
-      const key = await storage.getKeyByValue(keyValue);
-      if (!key) {
-        return res.status(200).json({
-          status: "success",
-          data: {
-            isValid: false,
-            message: "Invalid key",
-          },
-        });
-      }
-      
       // Track API usage
       await storage.trackApiUsage(key.resellerId, key.key);
       
@@ -766,6 +711,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           expiryDate: key.expiryDate,
           status: isExpired ? "expired" : (key.devicesUsed >= key.deviceLimit ? "full" : "active")
         },
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        res.status(400).json({ status: "error", message: error.message });
+      } else {
+        res.status(500).json({ status: "error", message: "Internal server error" });
+      }
+    }
+  });
+  
+  // API usage statistics for reseller
+  app.get("/api/reseller/api-usage", isAuthenticated, async (req, res) => {
+    try {
+      if (req.session.isAdmin) {
+        return res.status(403).json({ status: "error", message: "Admin cannot access reseller stats" });
+      }
+      
+      const userId = req.session.userId as number;
+      const stats = await storage.getApiUsageStats(userId);
+      
+      res.status(200).json({
+        status: "success",
+        stats
       });
     } catch (error) {
       if (error instanceof Error) {
